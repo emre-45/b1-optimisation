@@ -267,3 +267,86 @@ plt.tight_layout()
 plt.show()
 
 print("\n" + "="*80)
+
+### TASK 3: Minimize Rosenbrock's function using the Nelder-Mead Simplex algorithm
+
+from scipy.optimize import minimize
+
+# Rosenbrock function for scipy (takes array input)
+def rosenbrock_scipy(params):
+    x, y = params
+    return 100 * (y - x**2)**2 + (1 - x)**2
+
+# Store path during optimization
+def nelder_mead_with_path(x0, y0):
+    """
+    Nelder-Mead optimization using scipy with path tracking
+    """
+    path = [(x0, y0)]
+    
+    def callback(xk):
+        path.append((xk[0], xk[1]))
+    
+    result = minimize(rosenbrock_scipy, 
+                     x0=[x0, y0], 
+                     method='Nelder-Mead',
+                     callback=callback,
+                     options={'maxiter': 10000, 'xatol': 1e-8, 'fatol': 1e-8})
+    
+    return np.array(path), result.nit, result
+
+# Use the same three random initializations
+print("\n" + "="*80)
+print("TASK 3: Nelder-Mead Simplex Algorithm")
+print("="*80)
+
+nelder_mead_results = []
+print("\nNelder-Mead (scipy):")
+print("-" * 40)
+
+for idx, (x0, y0) in enumerate(initial_points):
+    path, iters, result = nelder_mead_with_path(x0, y0)
+    nelder_mead_results.append(path)
+    x_final, y_final = result.x
+    f_final = result.fun
+    
+    print(f"  Init {idx+1}: ({x0:6.2f}, {y0:6.2f}) -> ({x_final:8.5f}, {y_final:8.5f}), "
+          f"f = {f_final:10.7f}, iterations = {iters}, success = {result.success}")
+
+# Visualize Nelder-Mead convergence
+fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+
+# Plot contours
+contourf = ax.contourf(X, Y, Z, levels=50, cmap='viridis', alpha=0.6)
+ax.contour(X, Y, Z, levels=50, cmap='viridis', alpha=0.3, linewidths=0.5)
+
+# Plot minimum
+ax.plot(x_min, y_min, 'r*', markersize=20, label='Global minimum', zorder=10)
+
+# Plot convergence paths for all three initializations
+colors = ['red', 'blue', 'green']
+markers = ['o', 's', '^']
+
+for idx, path in enumerate(nelder_mead_results):
+    ax.plot(path[:, 0], path[:, 1], 
+            color=colors[idx], marker=markers[idx], markersize=4,
+            linewidth=2, alpha=0.7, markevery=max(1, len(path)//20),
+            label=f'Init {idx+1}: ({initial_points[idx][0]:.1f}, {initial_points[idx][1]:.1f})')
+    
+    # Mark start point
+    ax.plot(path[0, 0], path[0, 1], marker='x', color=colors[idx], 
+            markersize=12, markeredgewidth=3, zorder=9)
+
+ax.set_xlabel('x', fontsize=12)
+ax.set_ylabel('y', fontsize=12)
+ax.set_title('Nelder-Mead Simplex Algorithm Convergence', fontsize=14, fontweight='bold')
+ax.legend(fontsize=10, loc='lower left')
+ax.grid(True, alpha=0.3)
+ax.set_xlim(-2, 2)
+ax.set_ylim(-2, 2)
+plt.colorbar(contourf, ax=ax, label='f(x, y)')
+
+plt.tight_layout()
+plt.show()
+
+print("\n" + "="*80)
